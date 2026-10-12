@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Слова</title>
+<script>
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true"><i class="ri-book-2-line"></i></span>
+      <div class="brand-text">
+        <h1>Слова</h1>
+        <div class="breadcrumb" id="breadcrumb">
+          <i class="ri-loader-4-line"></i> загрузка...
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="statsBtn" class="btn-icon" aria-label="Статистика" title="Статистика">
+        <i class="ri-bar-chart-2-line"></i>
+      </button>
+      <button id="settingsBtn" class="btn-icon" aria-label="Настройки" title="Настройки">
+        <i class="ri-settings-3-line"></i>
+      </button>
+      <button id="themeToggle" class="btn-icon" aria-label="Сменить тему">
+        <i class="ri-sun-line"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="field">
+    <label class="field-label"><i class="ri-global-line"></i>Язык</label>
+    <div class="field-row">
+      <div class="custom-select" id="langSel">
+        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <i class="ri-global-line custom-select-icon"></i>
+          <span class="custom-select-label">—</span>
+          <i class="ri-arrow-down-s-line custom-select-arrow"></i>
+        </button>
+      </div>
+      <button id="addLangBtn" class="btn-icon" title="Добавить язык" aria-label="Добавить язык">
+        <i class="ri-add-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field-label"><i class="ri-folder-line"></i>Раздел</label>
+    <div class="field-row">
+      <div class="custom-select" id="sectionSel">
+        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <i class="ri-folder-line custom-select-icon"></i>
+          <span class="custom-select-label">—</span>
+          <i class="ri-arrow-down-s-line custom-select-arrow"></i>
+        </button>
+      </div>
+      <button id="addSectionBtn" class="btn-icon" title="Добавить раздел" aria-label="Добавить раздел">
+        <i class="ri-add-line"></i>
+      </button>
+      <button id="renameSectionBtn" class="btn-icon" title="Переименовать" aria-label="Переименовать">
+        <i class="ri-edit-line"></i>
+      </button>
+      <button id="reorderSectionsBtn" class="btn-icon" title="Переупорядочить" aria-label="Reorder">
+        <i class="ri-drag-move-2-line"></i>
+      </button>
+      <button id="delSectionBtn" class="btn-icon danger" title="Удалить раздел" aria-label="Удалить раздел">
+        <i class="ri-delete-bin-2-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs" role="tablist">
+    <button class="tab active" data-tab="learn" type="button" role="tab">
+      <i class="ri-graduation-cap-line"></i>
+      <span>Учить</span><span class="count" id="cnt-learn">0</span>
+    </button>
+    <button class="tab" data-tab="due" type="button" role="tab">
+      <i class="ri-time-line"></i>
+      <span>Сейчас</span><span class="count" id="cnt-due">0</span>
+    </button>
+    <button class="tab" data-tab="known" type="button" role="tab">
+      <i class="ri-check-double-line"></i>
+      <span>Проверено</span><span class="count" id="cnt-known">0</span>
+    </button>
+    <button class="tab" data-tab="unknown" type="button" role="tab">
+      <i class="ri-refresh-line"></i>
+      <span>На повтор</span><span class="count" id="cnt-unknown">0</span>
+    </button>
+  </div>
+
+  <div id="view-learn"></div>
+  <div id="view-due" hidden></div>
+  <div id="view-known" hidden></div>
+  <div id="view-unknown" hidden></div>
+
+  <section>
+    <h2><i class="ri-file-3-line"></i>Файл</h2>
+    <p class="hint">Данные хранятся в браузере (localStorage). Сохраните в файл для резервной копии.</p>
+    <div class="row">
+      <button id="exportBtn" class="btn">Сохранить</button>
+      <button id="importBtn" class="btn">Загрузить</button>
+      <button id="importWordsBtn" class="btn">Импорт слов</button>
+      <button id="resetBtn" class="btn danger">Сбросить</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json,application/json" hidden>
+  </section>
+</div>
+
+<div class="mass-bar" id="massBar" hidden>
+  <span class="mass-count" id="massCount">0</span>
+  <button data-mass="known" title="Проверено"><i class="ri-check-line"></i></button>
+  <button data-mass="unknown" title="На повтор"><i class="ri-question-line"></i></button>
+  <button data-mass="reset" title="В изучение"><i class="ri-restart-line"></i></button>
+  <button data-mass="move" title="В другой раздел"><i class="ri-folder-transfer-line"></i></button>
+  <button data-mass="delete" title="Удалить" class="danger"><i class="ri-delete-bin-2-line"></i></button>
+  <button data-mass="clear" title="Снять выделение"><i class="ri-close-line"></i></button>
+</div>
+
+<!-- Редактирование слова -->
+<dialog id="editDialog" aria-labelledby="editTitle">
+  <h3 id="editTitle">Редактировать слово</h3>
+  <input type="text" id="editWord" placeholder="Слово">
+  <input type="text" id="editTranscription" placeholder="Транскрипция">
+  <input type="text" id="editTrans" placeholder="Перевод">
+  <input type="text" id="editAltTrans" placeholder="Другие переводы через ;">
+  <div class="custom-select" id="editType">
+    <button type="button" class="custom-select-trigger" aria-haspopup="listbox">
+      <i class="ri-price-tag-3-line custom-select-icon"></i>
+      <span class="custom-select-label">—</span>
+      <i class="ri-arrow-down-s-line custom-select-arrow"></i>
+    </button>
+  </div>
+  <input type="text" id="editTags" placeholder="Теги через запятую">
+  <input type="text" id="editExample" placeholder="Пример">
+  <input type="text" id="editExampleTrans" placeholder="Перевод примера">
+  <input type="text" id="editSynonyms" placeholder="Синонимы через ;">
+  <input type="text" id="editAntonyms" placeholder="Антонимы через ;">
+  <textarea id="editNotes" placeholder="Заметка" rows="2"></textarea>
+  <div class="row">
+    <button id="editCancel" class="btn">Отмена</button>
+    <button id="editSave" class="btn primary">Сохранить</button>
+  </div>
+</dialog>
+
+<!-- Шторка выбора типа -->
+<dialog id="typeDialog" class="sheet-dialog" aria-labelledby="typeDialogTitle">
+  <div class="sheet-header">
+    <i class="ri-price-tag-3-line"></i>
+    <h3 id="typeDialogTitle">Тип слова</h3>
+    <button type="button" class="sheet-close" data-close-type aria-label="Закрыть">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+  <div class="sheet-body" data-type-list></div>
+</dialog>
+
+<!-- НАСТРОЙКИ -->
+<dialog id="settingsDialog" class="dialog-sheet" aria-labelledby="settingsTitle">
+  <div class="dialog-head">
+    <i class="ri-settings-3-line"></i>
+    <h3 id="settingsTitle">Настройки</h3>
+    <button type="button" class="dialog-head-close" data-close="settingsDialog" aria-label="Закрыть">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <div class="settings-section">
+      <div class="settings-section-title">Внешний вид</div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-main">Тема</div>
+          <div class="settings-label-hint">Светлая, тёмная или системная</div>
+        </div>
+        <div class="seg" id="setTheme">
+          <button type="button" data-theme-val="light"><i class="ri-sun-line"></i>Светлая</button>
+          <button type="button" data-theme-val="dark"><i class="ri-moon-line"></i>Тёмная</button>
+          <button type="button" data-theme-val="system"><i class="ri-computer-line"></i>Система</button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-main">Размер шрифта</div>
+          <div class="settings-label-hint">Влияет на весь интерфейс</div>
+        </div>
+        <div class="seg" id="setFontSize">
+          <button type="button" data-fs="small">S</button>
+          <button type="button" data-fs="medium">M</button>
+          <button type="button" data-fs="large">L</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Обучение</div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-main">Автопроизношение</div>
+          <div class="settings-label-hint">Озвучивать слово при показе</div>
+        </div>
+        <button type="button" class="switch" id="setAutoSpeak" role="switch" aria-checked="false">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-main">Мягкая проверка</div>
+          <div class="settings-label-hint">Игнорировать 1 опечатку</div>
+        </div>
+        <button type="button" class="switch" id="setFuzzy" role="switch" aria-checked="true">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Горячие клавиши</div>
+      <div id="hotkeysList" class="hotkeys-list"></div>
+    </div>
+  </div>
+
+  <div class="dialog-foot">
+    <button id="settingsClose" class="btn primary">Готово</button>
+  </div>
+</dialog>
+
+<!-- СТАТИСТИКА -->
+<dialog id="statsDialog" class="dialog-sheet" aria-labelledby="statsTitle">
+  <div class="dialog-head">
+    <i class="ri-bar-chart-2-line"></i>
+    <h3 id="statsTitle">Статистика</h3>
+    <button type="button" class="dialog-head-close" data-close="statsDialog" aria-label="Закрыть">
+      <i class="ri-close-line"></i>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <div class="stats-overview" id="statsOverview"></div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">Активность за 13 недель</div>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">Последние 14 дней</div>
+      <div class="chart" id="chart"></div>
+    </div>
+  </div>
+
+  <div class="dialog-foot">
+    <button id="exportStatsBtn" class="btn"><i class="ri-download-line"></i>CSV</button>
+    <button id="statsClose" class="btn primary">Готово</button>
+  </div>
+</dialog>
+
+<!-- ИМПОРТ СЛОВ -->
+<dialog id="importDialog" aria-labelledby="importTitle">
+  <h3 id="importTitle"><i class="ri-upload-line"></i>Импорт слов</h3>
+
+  <div class="import-tabs">
+    <button type="button" class="import-tab active" data-import-tab="text">
+      <i class="ri-file-text-line"></i>Текст
+    </button>
+    <button type="button" class="import-tab" data-import-tab="url">
+      <i class="ri-link"></i>URL
+    </button>
+    <button type="button" class="import-tab" data-import-tab="file">
+      <i class="ri-upload-2-line"></i>Файл
+    </button>
+  </div>
+
+  <div class="import-panel" data-import-panel="text">
+    <textarea id="importText" rows="8"
+      placeholder="Форматы:&#10;word — перевод&#10;word | перевод | [транскрипция]&#10;word&#9;перевод&#9;[транскрипция]&#10;word, перевод"></textarea>
+  </div>
+
+  <div class="import-panel" data-import-panel="url" hidden>
+    <input type="text" id="importUrl" placeholder="https://example.com/words.txt">
+    <p class="hint">Файл должен быть в текстовом формате, по одной паре на строку.</p>
+  </div>
+
+  <div class="import-panel" data-import-panel="file" hidden>
+    <input type="file" id="importWordsFile" accept=".txt,.csv,text/plain,text/csv">
+    <p class="hint">Форматы: .txt, .csv. Одна пара на строку.</p>
+  </div>
+
+  <label class="import-option">
+    <input type="checkbox" id="importAutoTranslate">
+    <span>Автоматически переводить пустые переводы</span>
+  </label>
+
+  <div class="row">
+    <button id="importCancel" class="btn">Отмена</button>
+    <button id="importConfirm" class="btn primary">Импортировать</button>
+  </div>
+</dialog>
+
+<!-- prompt / confirm -->
+<dialog id="promptDialog" aria-labelledby="promptTitle">
+  <h3 id="promptTitle">Введите значение</h3>
+  <p class="dialog-message" id="promptMessage" hidden></p>
+  <input type="text" id="promptInput">
+  <div class="row">
+    <button id="promptCancel" class="btn">Отмена</button>
+    <button id="promptOk" class="btn primary">OK</button>
+  </div>
+</dialog>
+
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <h3 id="confirmTitle">Подтвердите</h3>
+  <p class="dialog-message" id="confirmMessage"></p>
+  <div class="row">
+    <button id="confirmCancel" class="btn">Отмена</button>
+    <button id="confirmOk" class="btn primary">OK</button>
+  </div>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<div class="scroll-buttons" id="scrollButtons" hidden>
+  <button id="scrollTopBtn" class="btn-icon scroll-btn" aria-label="Наверх">
+    <i class="ri-arrow-up-line"></i>
+  </button>
+  <button id="scrollBottomBtn" class="btn-icon scroll-btn" aria-label="Вниз">
+    <i class="ri-arrow-down-line"></i>
+  </button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
